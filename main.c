@@ -9,13 +9,46 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 #include <cmsis_os.h>
 #include <string.h>
 
-void generic_thread(void const *arg) {
+enum gamePhase{Menu, Game, Victory, GameOver} phase;
+
+void game_logic_manager(void const *arg) {
+	phase = Menu; // game starts in main menu
 	while(1) {
 		osThreadYield();
 	}	
 }
 
-osThreadDef(generic_thread, osPriorityNormal, 1, 0);
+osThreadDef(game_logic_manager, osPriorityNormal, 1, 0);
+
+void display_manager(void const *arg) {
+	while(1) {
+		if(phase == Menu) {
+			// display menu graphics
+			while(phase == Menu) {
+				// update time limit display
+				osThreadYield();
+			}
+		}
+		
+		else if(phase == Game) {
+			// display game graphics
+			while(phase == Game) {
+				// update board and timer display
+				osThreadYield();
+			}
+		}
+		
+		else if(phase == Victory) {
+			// display victory screen
+		}
+		
+		else if(phase == GameOver) {
+			// display game over screen
+		}
+	}	
+}
+
+osThreadDef(display_manager, osPriorityNormal, 1, 0);
 
 int main() {
 	printf("Initializing...");
@@ -23,7 +56,8 @@ int main() {
 	osKernelInitialize();
 	osKernelStart();
 	
-	osThreadCreate(osThread(generic_thread), NULL);
+	osThreadCreate(osThread(game_logic_manager), NULL);
+	osThreadCreate(osThread(display_manager), NULL);
 
 	while(1);
 }
