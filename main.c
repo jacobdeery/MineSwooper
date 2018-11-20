@@ -2,7 +2,6 @@
 Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 */
 
-
 #include <lpc17xx.h>
 #include "stdio.h"
 #include "GLCD.h"
@@ -10,6 +9,20 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 #include <string.h>
 
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
+
+void game_peripheral_manager(void const *arg) {
+	while(1){
+		if(phase == Menu){
+			// Potentiometer, INT0 Button
+		} else if(phase == Game){ 
+			// Joystick, INT0 Button
+		} else if(phase == Victory || phase == GameOver) {
+			// INT0 Button
+		}
+	}
+}
+
+osThreadDef(game_peripheral_manager, osPriorityNormal, 1, 0);
 
 void game_logic_manager(void const *arg) {
 	phase = Menu; // game starts in main menu
@@ -58,6 +71,7 @@ int main() {
 	
 	osThreadCreate(osThread(game_logic_manager), NULL);
 	osThreadCreate(osThread(display_manager), NULL);
+	osThreadCreate(osThread(game_peripheral_manager), NULL);
 
 	while(1);
 }
