@@ -12,7 +12,7 @@ enum gamePhase{Menu, Game, Victory, GameOver} phase;
 uint32_t time_remaining = 50;
 
 void game_logic_manager(void const *arg) {
-	phase = Game; // game starts in main menu
+	phase = Menu; // game starts in main menu
 	while(1) {
 		osThreadYield();
 	}	
@@ -22,16 +22,25 @@ osThreadDef(game_logic_manager, osPriorityNormal, 1, 0);
 
 void display_manager(void const *arg) {
 	Display_Init();
+
 	while(1) {
 		if(phase == Menu) {
+			Display_SetBoardOffsetX(120);
+			Display_SetBoardOffsetY(80);
+			Display_DrawCell(0, 0, 3);
+			Display_DrawCell(1, 0, 4);
+			Display_DrawCell(2, 0, 3);
+			Display_DrawCell(3, 0, 4);
 			Display_ShowMainMenu();
 			while(phase == Menu) {
-				// update time limit display
+				Display_UpdateTimeLimit(time_remaining);
 				osThreadYield();
 			}
 		}
 		
 		else if(phase == Game) {
+			Display_SetBoardOffsetX(0);
+			Display_SetBoardOffsetY(30);
 			Display_ShowGameBoard();
 			while(phase == Game) {
 				Display_UpdateTimeRemaining(time_remaining);
