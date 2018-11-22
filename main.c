@@ -8,6 +8,9 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 #include <cmsis_os.h>
 #include <string.h>
 
+#define PER_FREQ  1  //Frequency in Hz
+#define DEFAULT_TIME 120 //Time in Seconds
+
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
 enum button{Pressed, Not_Pressed};
 enum joyStick{Up, Down, Left, Right, None};
@@ -20,10 +23,37 @@ typedef struct {
 } game_peripheral_message;
 
 uint32_t time_remaining = 50;
-const uint16_t perFreq = 1; 		// Frequency in Hz
 
 osMailQDef(q1, 10, game_peripheral_message);
 osMailQId q1_id;
+
+void printMessage(game_peripheral_message *message) {
+	if(message->blueButton == Pressed) {
+			printf("INT0 Pressed \n");
+		} else {
+			printf("INT0 Not Pressed \n");
+		}
+
+		if(message->joyDirection == Up) {
+			printf("Up \n");
+		} else if(message->joyDirection == Down) {
+			printf("Down \n");
+		} else if(message->joyDirection == Left) {
+			printf("Left \n");
+		} else if((message->joyDirection == Right)) {
+			printf("Right \n");
+		} else if((message->joyDirection == None)) {
+			printf("None \n");
+		}
+
+		if(message->joyButton == Pressed) {
+			printf("joy Pressed \n");
+		} else {
+			printf("joy Not Pressed \n");
+		}
+
+		printf("%u", message->pot);	
+}
 
 void game_peripheral_manager(void const *arg) {
 	//Pot config
@@ -33,7 +63,7 @@ void game_peripheral_manager(void const *arg) {
 	LPC_ADC->ADCR = (1 << 2) | (4 << 8) | (1 << 21);
 
 	while(1){
-		osDelay(8000/perFreq);
+		osDelay(8000/PER_FREQ);
 		game_peripheral_message message = {Not_Pressed, Not_Pressed, None, 0}; 
 		
 		if(phase == Menu){
@@ -42,7 +72,6 @@ void game_peripheral_manager(void const *arg) {
 			while(!((LPC_ADC->ADGDR >> 31) & 0x1));
 			
 			message.pot = (uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF);
-			printf("%u \n",message.pot);
 
 		} else if(phase == Game){ 
 			//Joystick
@@ -72,6 +101,8 @@ void game_peripheral_manager(void const *arg) {
 			message.blueButton = Pressed; 
 		}
 
+		printMessage(&message);
+
 		game_peripheral_message *p_message = osMailAlloc(q1_id, 0);
 		if (p_message != NULL) osMailPut(q1_id, p_message);
 
@@ -85,13 +116,16 @@ void game_logic_manager(void const *arg) {
 	phase = Menu; // game starts in main menu
 	
 	while(1) {
+		printf("\n");
 		game_peripheral_message message; 
 		
 		osEvent evt = osMailGet(q1_id, osWaitForever);
 		
 		if(evt.status == osEventMail) {
-			memcpy(&message, evt.value.p, sizeof(game_peripheral_message));
+			//memcpy(&message, evt.value.p, sizeof(game_peripheral_message));
+			//printMessage((game_peripheral_message *)evt.value.p);
 			osMailFree(q1_id, evt.value.p);
+			
 		}
 
 		if(phase == Menu) {
