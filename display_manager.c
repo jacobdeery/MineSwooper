@@ -264,6 +264,10 @@ void Display_Init(void) {
 	GLCD_SetTextColor(White);
 }
 
+void Display_Clear(void) {
+	GLCD_Clear(BetterPurple);
+}
+
 void Display_SetBoardOffsetX(uint16_t offset) {
 	board_offset_x = offset;
 }
@@ -276,7 +280,14 @@ void Display_ShowMainMenu(void) {
 	GLCD_DisplayString(1, 4, 1, "MineSwooper");
 	GLCD_DisplayString(6, 11, 0, "from Bean Counter Softworks");
 
-	GLCD_DisplayString(16, 19, 0, "Time limit (s):");
+	Display_SetBoardOffsetX(120);
+	Display_SetBoardOffsetY(80);
+	Display_DrawCell(0, 0, 3);
+	Display_DrawCell(1, 0, 4);
+	Display_DrawCell(2, 0, 3);
+	Display_DrawCell(3, 0, 4);
+
+	GLCD_DisplayString(16, 20, 0, "Time limit (s):");
 
 	GLCD_DisplayString(23, 8, 0, "Use potentiometer to adjust time limit");
 	GLCD_DisplayString(24, 14, 0, "Press pushbutton to begin");
@@ -284,10 +295,13 @@ void Display_ShowMainMenu(void) {
 }
 
 void Display_ShowGameBoard(void) {
+	Display_SetBoardOffsetX(0);
+	Display_SetBoardOffsetY(30);
 
 	GLCD_DisplayString(0, 0, 1, "MineSwooper");
 
-	GLCD_DisplayString(7, 36, 0, "Time Remaining:");
+	GLCD_DisplayString(4, 36, 0, "Time Remaining:");
+	GLCD_DisplayString(10, 36, 0, "Mines Remaining:");
 
 	GLCD_DisplayString(17, 36, 0, "Controls:");
 
@@ -378,11 +392,50 @@ void Display_UpdateTimeLimit(uint32_t seconds){
 void Display_UpdateTimeRemaining(uint32_t seconds){
 	char s[3];
 	sprintf(s, "%-3u", seconds);
-	GLCD_DisplayString(3, 14, 1, (unsigned char *)s);
+	GLCD_DisplayString(2, 14, 1, (unsigned char *)s);
+}
+
+void Display_UpdateMinesRemaining(uint32_t mines){
+	char s[3];
+	sprintf(s, "%-3u", mines);
+	GLCD_DisplayString(4, 14, 1, (unsigned char *)s);
 }
 
 void Display_ShowVictory(void) {
+	GLCD_DisplayString(3, 6, 1, "Victory!");
+
+	Display_SetBoardOffsetX(120);
+	Display_SetBoardOffsetY(125);
+	Display_DrawCell(0, 0, 4);
+	Display_DrawCell(1, 0, 4);
+	Display_DrawCell(2, 0, 4);
+	Display_DrawCell(3, 0, 4);
+
+	GLCD_DisplayString(23, 19, 0, "Press pushbutton");
+	GLCD_DisplayString(24, 19, 0, "to return to menu");
 }
 
-void Display_ShowGameOver(void) {
+void Display_ShowGameOver(uint8_t exploded) {
+	GLCD_DisplayString(2, 5, 1, "Game Over");
+	
+	if(exploded) {
+		GLCD_DisplayString(3, 4, 1, "You exploded!");
+		Display_SetBoardOffsetX(120);
+		Display_SetBoardOffsetY(130);
+		Display_DrawCell(0, 0, 5);
+		Display_DrawCell(1, 0, 5);
+		Display_DrawCell(2, 0, 5);
+		Display_DrawCell(3, 0, 5);
+	} else {
+		GLCD_DisplayString(3, 4, 1, "Out of time!");
+		Display_SetBoardOffsetX(120);
+		Display_SetBoardOffsetY(130);
+		Display_DrawCell(0, 0, 3);
+		Display_DrawCell(1, 0, 3);
+		Display_DrawCell(2, 0, 3);
+		Display_DrawCell(3, 0, 3);
+	}
+
+	GLCD_DisplayString(24, 19, 0, "Press pushbutton");
+	GLCD_DisplayString(25, 19, 0, "to return to menu");
 }
