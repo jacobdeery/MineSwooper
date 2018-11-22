@@ -91,7 +91,13 @@ void game_logic_manager(void const *arg) {
 			}
 		} else if(phase == Game) {
 			if(message.blueButton == Pressed) {
-				
+				//place flag
+			}
+			if (message.joyDirection != None) {
+				//Update cursor position
+			}
+			if (message.joyButton == Pressed) {
+				//Reveal tile
 			}
 		} else if(phase == Victory) {
 			if(message.blueButton == Pressed) {
@@ -120,6 +126,7 @@ void game_logic_manager(void const *arg) {
 		
 		PERIPHERAL PRECEDENCE 
 			INT0 > MOVE > BUTTON PUSH > POT
+			Need to discuss if we're going to allow "compound actions" or w.e. 
 	*/
 }
 
