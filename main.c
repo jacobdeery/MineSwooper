@@ -2,17 +2,6 @@
 Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 */
 
-/* 
-	POTENTIOMETER NOTES: 
-	
-	0 is pressed, 1 is not pressed
-	
-	BITMAP: 
-	Left, Up, Right, Down, Button
-		23  24     25    26      20
-	
-*/
-
 #include <lpc17xx.h>
 #include "stdio.h"
 #include "GLCD.h"
@@ -21,17 +10,19 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
 enum button{Pressed, Not_Pressed};
-enum joy{Up, Down, Left, Right};
+enum joyStick{Up, Down, Left, Right, None};
 
 typedef struct {
 	enum button blueButton; 
 	enum button joyButton;
-	enum joy joyStick;
+	enum joyStick joyDirection;
 	uint32_t pot; 
 } game_peripheral_message;
 
+osMailQDef(q1, 10, game_peripheral_message);
+osMailQId q1_id;
+
 void game_peripheral_manager(void const *arg) {
-	
 	//Pot config
 	LPC_PINCON->PINSEL1 &= ~(0x03<<18);
 	LPC_PINCON->PINSEL1 |= (0x01<<18);
@@ -39,18 +30,39 @@ void game_peripheral_manager(void const *arg) {
 	LPC_ADC->ADCR = (1 << 2) | (4 << 8) | (1 << 21);
 
 	while(1){
+		game_peripheral_message message = {Not_Pressed, Not_Pressed, None, 0}; 
+		
 		if(phase == Menu){
 			//ADC conversion 
 			LPC_ADC->ADCR |= (0x1<<24);
 			while(!((LPC_ADC->ADGDR >> 31) & 0x1));
 			
-			uint32_t pot = (LPC_ADC->ADGDR >> 4) & 0xFFF;
+			message.pot = (uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF);
 		} else if(phase == Game){ 
-			// Joystick
+			//Joystick
 			uint32_t joy = LPC_GPIO1->FIOPIN >> 20; 
+
+			//Joystick Button
+			if(!(joy & 0x1)) message.joyButton = Pressed;
+
+			//Joystick Direction
+			if(!(joy>>23 & 0x1))
+				message.joyDirection = Left;
+			else if(!(joy>>24 & 0x1))
+				message.joyDirection = Up;
+			else if(!(joy>>25 & 0x1)) 
+				message.joyDirection = Right;
+			else if(!(joy>>26 & 0x1)) 
+				message.joyDirection = Down;
+			else 
+				message.joyDirection = None;
 		}
 		
-		uint32_t button = LPC_GPI02->FIOPIN >> 10; //INT0 button is required in all states, so constantly check it
+		//INT0 Button
+		message.blueButton = (uint32_t)(LPC_GPI02->FIOPIN >> 10);
+		
+		game_peripheral_message *p_message = osMailAlloc(q1_id, 0);
+		if (p_message != NULL) osMailPut(q1_id, p_message);
 
 		osThreadYield();
 	}
@@ -99,10 +111,12 @@ osThreadDef(display_manager, osPriorityNormal, 1, 0);
 
 int main() {
 	printf("Initializing...");
-	
+
+	q1_id = osMailCreate(osMailQ(q1), NULL);
+
 	osKernelInitialize();
 	osKernelStart();
-	
+
 	osThreadCreate(osThread(game_logic_manager), NULL);
 	osThreadCreate(osThread(display_manager), NULL);
 	osThreadCreate(osThread(game_peripheral_manager), NULL);
