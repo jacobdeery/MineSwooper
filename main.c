@@ -19,6 +19,8 @@ typedef struct {
 	uint32_t pot; 
 } game_peripheral_message;
 
+uint32_t time_remaining = 50;
+
 osMailQDef(q1, 10, game_peripheral_message);
 osMailQId q1_id;
 
@@ -73,8 +75,52 @@ osThreadDef(game_peripheral_manager, osPriorityNormal, 1, 0);
 void game_logic_manager(void const *arg) {
 	phase = Menu; // game starts in main menu
 	while(1) {
+		game_peripheral_message message; 
+		
+		osEvent evt = osMailGet(q1_id, osWaitForever);
+		
+		if(evt.status == osEventMail) {
+			game_peripheral_copy((game_peripheral_message *) evt.value.p, &message);
+			osMailFree(q1_id, evt.value.p);
+		}
+
+		if(phase == Menu) 
+			if(message.blueButton == Pressed){
+				phase = Game; 
+				time_remaining = ((float)message.pot/4095)*50; 
+			}
+		} else if(phase == Game) {
+			if(message.blueButton == Pressed) {
+				
+			}
+		} else if(phase == Victory) {
+			if(message.blueButton == Pressed) {
+				phase = Menu; 
+				time_remaining = 50; 
+			}	
+		} else if(phase == GameOver) {
+			if(message.blueButton == Pressed) {
+				phase = Menu; 
+				time_remaining = 50; 
+			}
+		}
+
 		osThreadYield();
 	}	
+	/*
+		NOTES: 
+			1. Clear the queue between game states? 
+			2. How fast should we be running peripherals to avoid "duplicate" actions? 	
+		STRUCTURE: 
+			1. Extract peripheral message from queue
+			2. Check game state 
+			3. Read peripheral message
+			4. Perform action
+			5. Update map structure
+		
+		PERIPHERAL PRECEDENCE 
+			INT0 > MOVE > BUTTON PUSH > POT
+	*/
 }
 
 osThreadDef(game_logic_manager, osPriorityNormal, 1, 0);
@@ -105,6 +151,13 @@ void display_manager(void const *arg) {
 			// display game over screen
 		}
 	}	
+}
+
+void game_peripheral_copy(game_peripheral_message *m1, game_peripheral_message *m2){
+	m2->blueButton = m1->blueButton;
+	m2->joyButton = m1->joyButton;
+	m2->joyDirection = m1->joyDirection;
+	m2->pot = m1->pot;
 }
 
 osThreadDef(display_manager, osPriorityNormal, 1, 0);
