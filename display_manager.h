@@ -21,7 +21,6 @@ void Display_UpdateMinesRemaining(uint32_t mines);
 void Display_DrawSpriteSheet(void);
 void Display_DrawCell(uint8_t x, uint8_t y, uint8_t type);
 void Display_DrawCellNum(uint8_t x, uint8_t y, uint8_t num);
-
-void Display_PlaceCursorAt(uint8_t x, uint8_t y);
+void Display_DrawCursor(uint8_t x, uint8_t y);
 
 #endif /* _DISPLAY_MANAGER_H */

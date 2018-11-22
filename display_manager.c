@@ -296,37 +296,37 @@ void Display_ShowMainMenu(void) {
 
 void Display_ShowGameBoard(void) {
 	Display_SetBoardOffsetX(0);
-	Display_SetBoardOffsetY(30);
+	Display_SetBoardOffsetY(35);
 
 	GLCD_DisplayString(0, 0, 1, "MineSwooper");
 
-	GLCD_DisplayString(4, 36, 0, "Time Remaining:");
-	GLCD_DisplayString(10, 36, 0, "Mines Remaining:");
+	GLCD_DisplayString(4, 33, 0, "Time Remaining:");
+	GLCD_DisplayString(10, 33, 0, "Mines Remaining:");
 
-	GLCD_DisplayString(17, 36, 0, "Controls:");
+	GLCD_DisplayString(17, 33, 0, "Controls:");
 
-	GLCD_DisplayString(19, 36, 0, "Move joystick:");
-	GLCD_DisplayString(20, 36, 0, "Move cursor");
+	GLCD_DisplayString(19, 33, 0, "Move joystick:");
+	GLCD_DisplayString(20, 33, 0, "Move cursor");
 	
-	GLCD_DisplayString(22, 36, 0, "Press joystick:");
-	GLCD_DisplayString(23, 36, 0, "Place flag");
+	GLCD_DisplayString(22, 33, 0, "Press joystick:");
+	GLCD_DisplayString(23, 33, 0, "Place flag");
 	
-	GLCD_DisplayString(25, 36, 0, "Pushbutton:");
-	GLCD_DisplayString(26, 36, 0, "Reveal tile");
+	GLCD_DisplayString(25, 33, 0, "Pushbutton:");
+	GLCD_DisplayString(26, 33, 0, "Reveal tile");
 
-	for(uint8_t row = 0; row < 10; row++) {
-		for(uint8_t col = 0; col < 10; col++) { 
+	for(uint8_t row = 0; row < 9; row++) {
+		for(uint8_t col = 0; col < 9; col++) { 
 			Display_DrawCell(col, row, 1);
 		}
 	}
 
 	// uncomment the following line for debug purposes only
-	Display_DrawSpriteSheet();
+	// Display_DrawSpriteSheet();
 }
 
 void Display_DrawSpriteSheet(void) {
-	for(uint8_t row = 0; row < 10; row++) {
-		for(uint8_t col = 0; col < 10; col++) { 
+	for(uint8_t row = 0; row < 9; row++) {
+		for(uint8_t col = 0; col < 9; col++) { 
 			if(row == 0) {
 				if(col%2 == 0) {
 					Display_DrawCell(col, row, 1);
@@ -343,7 +343,7 @@ void Display_DrawSpriteSheet(void) {
 				Display_DrawCellNum(col, row, row);
 			}
 			if(row == col) {
-				Display_PlaceCursorAt(row, col);
+				Display_DrawCursor(row, col);
 			}
 		}
 	}
@@ -369,7 +369,7 @@ void Display_DrawCellNum(uint8_t x, uint8_t y, uint8_t num) {
 	GLCD_Bitmap(20*x + board_offset_x + 3, 20*y + board_offset_y + 3, 14, 14, (unsigned char *)&DigitsBitmaps [index]);
 }
 
-void Display_PlaceCursorAt(uint8_t x, uint8_t y) {
+void Display_DrawCursor(uint8_t x, uint8_t y) {
 	GLCD_Bitmap(20*x + board_offset_x, 20*y + board_offset_y, 2, 5, (unsigned char *)CursorBitmap); // top left
 	GLCD_Bitmap(20*x + board_offset_x, 20*y + board_offset_y, 5, 2, (unsigned char *)CursorBitmap);
 
@@ -392,13 +392,13 @@ void Display_UpdateTimeLimit(uint32_t seconds){
 void Display_UpdateTimeRemaining(uint32_t seconds){
 	char s[3];
 	sprintf(s, "%-3u", seconds);
-	GLCD_DisplayString(2, 14, 1, (unsigned char *)s);
+	GLCD_DisplayString(2, 13, 1, (unsigned char *)s);
 }
 
 void Display_UpdateMinesRemaining(uint32_t mines){
 	char s[3];
 	sprintf(s, "%-3u", mines);
-	GLCD_DisplayString(4, 14, 1, (unsigned char *)s);
+	GLCD_DisplayString(4, 13, 1, (unsigned char *)s);
 }
 
 void Display_ShowVictory(void) {
