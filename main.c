@@ -8,7 +8,7 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 #include <cmsis_os.h>
 #include <string.h>
 
-#define PER_FREQ  1  //Frequency in Hz
+#define PER_FREQ  2  //Frequency in Hz
 #define DEFAULT_TIME 120 //Time in Seconds
 
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
@@ -35,6 +35,7 @@ void printMessage(enum actionMessage *message) {
 	} else if (*message == None) {
 		printf("None \n");
 	}
+	printf("%u", time_remaining);
 }
 
 void game_peripheral_manager(void const *arg) {
@@ -51,16 +52,14 @@ void game_peripheral_manager(void const *arg) {
 		uint32_t blueButton = (LPC_GPIO2->FIOPIN >> 10) & 0x1;
 
 		if ((phase != Game) && (!blueButton)) {
-			//ADC conversion 
-			LPC_ADC->ADCR |= (0x1<<24);
+			LPC_ADC->ADCR |= (0x1<<24);					//ADC Conversion
 			while(!((LPC_ADC->ADGDR >> 31) & 0x1));
 			
 			time_remaining = (uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF);
 			phase = Game;
 
 		} else if(phase == Game){ 
-			//Joystick
-			uint32_t joy = LPC_GPIO1->FIOPIN >> 20; 
+			uint32_t joy = LPC_GPIO1->FIOPIN >> 20;  	// Joystick
 
 			if(!(joy & 0x1)) {
 				message = RevealTile; 
@@ -76,9 +75,6 @@ void game_peripheral_manager(void const *arg) {
 				message = MoveDown;
 			} 			
 		}
-
-		//printMessage(&message);
-
 		enum actionMessage *p_message = osMailAlloc(q1_id, 0);
 		
 		if (p_message != NULL) {
@@ -103,7 +99,6 @@ void game_logic_manager(void const *arg) {
 		
 		if(evt.status == osEventMail) {
 			message = *((enum actionMessage *)(evt.value.p));
-			printMessage(&message);
 			osMailFree(q1_id, evt.value.p);	
 		}		
 
