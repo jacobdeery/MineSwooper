@@ -11,14 +11,31 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
 
 void game_peripheral_manager(void const *arg) {
+	/* 
+		POTENTIOMETER NOTES: 
+		
+		0 is pressed, 1 is not pressed
+	 	
+		BITMAP: 
+		Left, Up, Right, Down, Button
+		  23  24     25    26      20
+	 	
+	*/
+
 	while(1){
 		if(phase == Menu){
-			// Potentiometer, INT0 Button
+			//Potentiometer
+			uint32_t joy = LPC_GPIO1->FIOPIN >> 20; 
+			
 		} else if(phase == Game){ 
-			// Joystick, INT0 Button
-		} else if(phase == Victory || phase == GameOver) {
-			// INT0 Button
+			// Joystick
+			uint32_t joy = LPC_GPIO1->FIOPIN >> 20; 
+			
 		}
+		
+		uint32_t button = LPC_GPI02->FIOPIN >> 10; //INT0 button is required in all states, so constantly check it
+
+		osThreadYield();
 	}
 }
 
