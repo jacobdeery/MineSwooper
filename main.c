@@ -12,47 +12,29 @@ Jacob Deery (jbdeery) and Jonathan Parson (jmparson)
 #define DEFAULT_TIME 120 //Time in Seconds
 
 enum gamePhase{Menu, Game, Victory, GameOver} phase;
-enum button{Pressed, Not_Pressed};
-enum joyStick{Up, Down, Left, Right, None};
-
-typedef struct {
-	enum button blueButton; 
-	enum button joyButton;
-	enum joyStick joyDirection;
-	uint32_t pot; 
-} game_peripheral_message;
+enum actionMessage{MoveUp, MoveDown, MoveLeft, MoveRight, RevealTile, PlaceFlag, None};
 
 uint32_t time_remaining = 50;
 
-osMailQDef(q1, 10, game_peripheral_message);
+osMailQDef(q1, 10, enum actionMessage);
 osMailQId q1_id;
 
-void printMessage(game_peripheral_message *message) {
-	if(message->blueButton == Pressed) {
-			printf("INT0 Pressed \n");
-		} else {
-			printf("INT0 Not Pressed \n");
-		}
-
-		if(message->joyDirection == Up) {
-			printf("Up \n");
-		} else if(message->joyDirection == Down) {
-			printf("Down \n");
-		} else if(message->joyDirection == Left) {
-			printf("Left \n");
-		} else if((message->joyDirection == Right)) {
-			printf("Right \n");
-		} else if((message->joyDirection == None)) {
-			printf("None \n");
-		}
-
-		if(message->joyButton == Pressed) {
-			printf("joy Pressed \n");
-		} else {
-			printf("joy Not Pressed \n");
-		}
-
-		printf("%u", message->pot);	
+void printMessage(enum actionMessage *message) {
+	if (*message == MoveUp) {
+		printf("Move Up \n");
+	} else if (*message == MoveDown) {
+		printf("Move Down \n");
+	} else if (*message == MoveLeft) {
+		printf("Move Left \n");
+	} else if (*message == MoveRight) {
+		printf("Move Right \n");
+	} else if (*message == RevealTile) {
+		printf("Reveal Tile \n");
+	} else if (*message == PlaceFlag) {
+		printf("Place Flag \n");
+	} else if (*message == None) {
+		printf("None \n");
+	}
 }
 
 void game_peripheral_manager(void const *arg) {
@@ -64,47 +46,45 @@ void game_peripheral_manager(void const *arg) {
 
 	while(1){
 		osDelay(8000/PER_FREQ);
-		game_peripheral_message message = {Not_Pressed, Not_Pressed, None, 0}; 
-		
-		if(phase == Menu){
+
+		enum actionMessage message = None;
+		uint32_t blueButton = (LPC_GPIO2->FIOPIN >> 10) & 0x1;
+
+		if ((phase != Game) && (!blueButton)) {
 			//ADC conversion 
 			LPC_ADC->ADCR |= (0x1<<24);
 			while(!((LPC_ADC->ADGDR >> 31) & 0x1));
 			
-			message.pot = (uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF);
+			time_remaining = (uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF);
+			phase = Game;
 
 		} else if(phase == Game){ 
 			//Joystick
 			uint32_t joy = LPC_GPIO1->FIOPIN >> 20; 
 
-			//Joystick Button
-			if(!(joy & 0x1)) message.joyButton = Pressed;
-			
-			//Joystick Direction
-			if(!(joy>>3 & 0x1)) { 
-				message.joyDirection = Left;
+			if(!(joy & 0x1)) {
+				message = RevealTile; 
+			} else if(!blueButton) {
+				message = PlaceFlag; 
+			} if(!(joy>>3 & 0x1)) { 
+				message = MoveLeft; 
 			} else if(!(joy>>4 & 0x1)) {
-				message.joyDirection = Up;
+				message = MoveUp; 
 			} else if(!(joy>>5 & 0x1)) {
-				message.joyDirection = Right;
+				message = MoveRight;
 			} else if(!(joy>>6 & 0x1)) { 
-				message.joyDirection = Down;
-			} else { 
-				message.joyDirection = None;
-			}
-			
+				message = MoveDown;
+			} 			
 		}
 
-		if((LPC_GPIO2->FIOPIN >> 10) & 0x1) { 
-			message.blueButton = Not_Pressed;
-		} else {
-			message.blueButton = Pressed; 
+		//printMessage(&message);
+
+		enum actionMessage *p_message = osMailAlloc(q1_id, 0);
+		
+		if (p_message != NULL) {
+			*((enum actionMessage *)(p_message)) = message; 
+			osMailPut(q1_id, p_message);
 		}
-
-		printMessage(&message);
-
-		game_peripheral_message *p_message = osMailAlloc(q1_id, 0);
-		if (p_message != NULL) osMailPut(q1_id, p_message);
 
 		osThreadYield();
 	}
@@ -117,43 +97,16 @@ void game_logic_manager(void const *arg) {
 	
 	while(1) {
 		printf("\n");
-		game_peripheral_message message; 
+		enum actionMessage message = None; 
 		
 		osEvent evt = osMailGet(q1_id, osWaitForever);
 		
 		if(evt.status == osEventMail) {
-			//memcpy(&message, evt.value.p, sizeof(game_peripheral_message));
-			//printMessage((game_peripheral_message *)evt.value.p);
-			osMailFree(q1_id, evt.value.p);
-			
-		}
+			message = *((enum actionMessage *)(evt.value.p));
+			printMessage(&message);
+			osMailFree(q1_id, evt.value.p);	
+		}		
 
-		if(phase == Menu) {
-			if(message.blueButton == Pressed){
-				phase = Game; 
-				time_remaining = ((float)message.pot/4095)*50; 
-			}
-		} else if(phase == Game) {
-			if(message.blueButton == Pressed) {
-				//place flag
-			}
-			if (message.joyDirection != None) {
-				//Update cursor position
-			}
-			if (message.joyButton == Pressed) {
-				//Reveal tile
-			}
-		} else if(phase == Victory) {
-			if(message.blueButton == Pressed) {
-				phase = Menu; 
-				time_remaining = 50; 
-			}	
-		} else if(phase == GameOver) {
-			if(message.blueButton == Pressed) {
-				phase = Menu; 
-				time_remaining = 50; 
-			}
-		}
 		osThreadYield(); 
 	}	
 }
