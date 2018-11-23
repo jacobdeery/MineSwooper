@@ -14,9 +14,9 @@ void Display_ShowGameBoard(void);
 void Display_ShowVictory(void);
 void Display_ShowGameOver(uint8_t exploded);
 
-void Display_UpdateTimeLimit(uint32_t seconds);
-void Display_UpdateTimeRemaining(uint32_t seconds);
-void Display_UpdateMinesRemaining(uint32_t mines);
+void Display_UpdateTimeLimit(uint8_t seconds);
+void Display_UpdateTimeRemaining(uint8_t seconds);
+void Display_UpdateMinesRemaining(uint8_t mines);
 
 void Display_DrawSpriteSheet(void);
 void Display_DrawCell(uint8_t x, uint8_t y, uint8_t type);

@@ -383,19 +383,19 @@ void Display_DrawCursor(uint8_t x, uint8_t y) {
 	GLCD_Bitmap(20*x + board_offset_x + 14, 20*y + board_offset_y + 18, 5, 2, (unsigned char *)CursorBitmap);
 }
 
-void Display_UpdateTimeLimit(uint32_t seconds){
+void Display_UpdateTimeLimit(uint8_t seconds) {
 	char s[3];
 	sprintf(s, "%-3u", seconds);
 	GLCD_DisplayString(6, 9, 1, (unsigned char *)s);
 }
 
-void Display_UpdateTimeRemaining(uint32_t seconds){
+void Display_UpdateTimeRemaining(uint8_t seconds) {
 	char s[3];
 	sprintf(s, "%-3u", seconds);
 	GLCD_DisplayString(2, 13, 1, (unsigned char *)s);
 }
 
-void Display_UpdateMinesRemaining(uint32_t mines){
+void Display_UpdateMinesRemaining(uint8_t mines) {
 	char s[3];
 	sprintf(s, "%-3u", mines);
 	GLCD_DisplayString(4, 13, 1, (unsigned char *)s);
