@@ -16,7 +16,7 @@ uint8_t board[9][9];
 
 uint8_t current_game_board_num = 3;
 uint8_t time_remaining = 90;
-uint8_t mines_remaining = 10;
+int8_t mines_remaining = 10;
 uint8_t tiles_remaining = 71;
 uint8_t cursor_x = 4;
 uint8_t cursor_y = 4;
@@ -32,7 +32,6 @@ osMutexId graphics_mutex_id;
 osTimerId game_timer_id;
 
 void timer_cb(void const *arg) {
-	printf("timer callback started\n");  
 	if(phase == Game) {
 		time_remaining--;
 		osMutexWait(graphics_mutex_id, osWaitForever);
@@ -40,11 +39,9 @@ void timer_cb(void const *arg) {
 		osMutexRelease(graphics_mutex_id);
 		if(time_remaining == 0) {
 			osTimerStop(game_timer_id);
-			printf("stopping timer\n");
 			phase = GameOverTime;
 		}
 	}
-	printf("timer callback ended\n"); 
 }
 
 osTimerDef(game_timer, timer_cb);
@@ -171,8 +168,8 @@ void board_manager(void const *arg) {
 						Display_DrawCell(cursor_x, cursor_y, 5);
 						Display_DrawCursor(cursor_x, cursor_y);
 						osMutexRelease(graphics_mutex_id);
-						//osDelay(8000);
-						//phase = GameOverExploded;
+						osDelay(8000);
+						phase = GameOverExploded;
 					} else if(revealed_tile < F_0) { // tile was not already revealed
 						tiles_remaining--;
 						if(revealed_tile == R_0) {

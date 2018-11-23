@@ -386,19 +386,28 @@ void Display_DrawCursor(uint8_t x, uint8_t y) {
 void Display_UpdateTimeLimit(uint8_t seconds) {
 	char s[3];
 	sprintf(s, "%-3u", seconds);
-	GLCD_DisplayString(6, 9, 1, (unsigned char *)s);
+
+    GLCD_DisplayChar(6, 9, 1, s[0]);
+	GLCD_DisplayChar(6, 10, 1, s[1]);
+	GLCD_DisplayChar(6, 11, 1, s[2]);
 }
 
 void Display_UpdateTimeRemaining(uint8_t seconds) {
 	char s[3];
 	sprintf(s, "%-3u", seconds);
-	GLCD_DisplayString(2, 13, 1, (unsigned char *)s);
+
+    GLCD_DisplayChar(2, 13, 1, s[0]);
+	GLCD_DisplayChar(2, 14, 1, s[1]);
+	GLCD_DisplayChar(2, 15, 1, s[2]);
 }
 
-void Display_UpdateMinesRemaining(uint8_t mines) {
+void Display_UpdateMinesRemaining(int8_t mines) {
 	char s[3];
-	sprintf(s, "%-3u", mines);
-	GLCD_DisplayString(4, 13, 1, (unsigned char *)s);
+	sprintf(s, "%-3d", mines);
+
+    GLCD_DisplayChar(4, 13, 1, s[0]);
+	GLCD_DisplayChar(4, 14, 1, s[1]);
+	GLCD_DisplayChar(4, 15, 1, s[2]);
 }
 
 void Display_ShowVictory(void) {
