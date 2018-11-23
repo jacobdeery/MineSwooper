@@ -21,6 +21,10 @@ uint8_t tiles_remaining = 71;
 uint8_t cursor_x = 4;
 uint8_t cursor_y = 4;
 
+uint8_t reveal_queue[162];
+uint8_t *head = reveal_queue;
+uint8_t *tail = reveal_queue;
+
 const uint8_t peripheralFrequency = 5;
 
 osMailQDef(q1, 10, enum actionMessage);
@@ -78,7 +82,7 @@ void game_peripheral_manager(void const *arg) {
 		enum actionMessage message = None;
 		uint32_t blueButton = (LPC_GPIO2->FIOPIN >> 10) & 0x1;
 
-		if ((phase == Menu)) {
+		if (phase == Menu) {
 			LPC_ADC->ADCR |= (0x1<<24);					//ADC Conversion
 			while(!((LPC_ADC->ADGDR >> 31) & 0x1));
 			time_remaining = ((float)((uint32_t)((LPC_ADC->ADGDR >> 4) & 0xFFF)))*150/4096 + 30;
@@ -117,6 +121,68 @@ void game_peripheral_manager(void const *arg) {
 }
 
 osThreadDef(game_peripheral_manager, osPriorityNormal, 1, 0);
+
+void conditional_reveal_and_queue(uint8_t board[9][9], uint8_t x, uint8_t y) {
+	if(board[y][x] < R_0 || board[y][x] > R_M) {
+		Board_RevealTileAt(board, x, y);
+		tiles_remaining--;
+		*tail = x;
+		*(tail+1) = y;
+		tail += 2;
+	}
+}
+
+void reveal_group(uint8_t board[9][9], uint8_t x, uint8_t y) {
+	*tail = x;
+	*(tail+1) = y;
+	tail += 2;
+	uint8_t revealed_tile = R_0;
+
+	while(head != tail) {
+		uint8_t curr_x = *head;
+		uint8_t curr_y = *(head+1);
+
+		revealed_tile = board[curr_y][curr_x];
+
+		if(revealed_tile == R_0) {
+			osMutexWait(graphics_mutex_id, osWaitForever);
+			Display_DrawCell(curr_x, curr_y, 2);
+			osMutexRelease(graphics_mutex_id);
+			if(curr_x != 0) {
+				conditional_reveal_and_queue(board, curr_x-1, curr_y);
+				if(curr_y != 0) {
+					conditional_reveal_and_queue(board, curr_x-1, curr_y-1);
+				}
+				if(curr_y != 8) {
+					conditional_reveal_and_queue(board, curr_x-1, curr_y+1);
+				}
+			}
+			if(curr_x != 8) {
+				conditional_reveal_and_queue(board, curr_x+1, curr_y);
+				if(curr_y != 0) {
+					conditional_reveal_and_queue(board, curr_x+1, curr_y-1);
+				}
+				if(curr_y != 8) {
+					conditional_reveal_and_queue(board, curr_x+1, curr_y+1);
+				}
+			}
+			if(curr_y != 0) {
+				conditional_reveal_and_queue(board, curr_x, curr_y-1);
+			}
+			if(curr_y != 8) {
+				conditional_reveal_and_queue(board, curr_x, curr_y+1);
+			}
+		} else if(revealed_tile < F_0) {
+			osMutexWait(graphics_mutex_id, osWaitForever);
+			Display_DrawCellNum(curr_x, curr_y, revealed_tile-10);
+			osMutexRelease(graphics_mutex_id);
+		}
+
+		head += 2;
+	}
+	head = reveal_queue;
+	tail = reveal_queue;
+}
 
 void board_manager(void const *arg) {
 	Display_Init();
@@ -173,8 +239,8 @@ void board_manager(void const *arg) {
 					} else if(revealed_tile < F_0) { // tile was not already revealed
 						tiles_remaining--;
 						if(revealed_tile == R_0) {
+							reveal_group(board, cursor_x, cursor_y);
 							osMutexWait(graphics_mutex_id, osWaitForever);
-							Display_DrawCell(cursor_x, cursor_y, 2);
 							Display_DrawCursor(cursor_x, cursor_y);
 							osMutexRelease(graphics_mutex_id);
 						} else { // tile has a number
