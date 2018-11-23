@@ -230,6 +230,7 @@ void board_manager(void const *arg) {
 				if(message == RevealTile) { // revealing a tile
 					uint8_t revealed_tile = Board_RevealTileAt(board, cursor_x, cursor_y);
 					if(revealed_tile == R_M) { // we exploded :(
+						osTimerStop(game_timer_id);
 						osMutexWait(graphics_mutex_id, osWaitForever);
 						Display_DrawCell(cursor_x, cursor_y, 5);
 						Display_DrawCursor(cursor_x, cursor_y);
@@ -249,7 +250,8 @@ void board_manager(void const *arg) {
 							Display_DrawCursor(cursor_x, cursor_y);
 							osMutexRelease(graphics_mutex_id);
 						}
-						if(tiles_remaining == 0) { // we've revealed all of the tiles
+						if(tiles_remaining == 0 && mines_remaining == 0) { // we've revealed all of the tiles and flagged all mines
+							osTimerStop(game_timer_id);
 							osDelay(8000);
 							phase = Victory;
 						}
@@ -263,6 +265,11 @@ void board_manager(void const *arg) {
 						Display_DrawCursor(cursor_x, cursor_y);
 						Display_UpdateMinesRemaining(--mines_remaining);
 						osMutexRelease(graphics_mutex_id);
+						if(tiles_remaining == 0 && mines_remaining == 0) { // we've revealed all of the tiles and flagged all mines
+							osTimerStop(game_timer_id);
+							osDelay(8000);
+							phase = Victory;
+						}
 					} else if(flag_status == 0) {
 						osMutexWait(graphics_mutex_id, osWaitForever);
 						Display_DrawCell(cursor_x, cursor_y, 1);
@@ -320,14 +327,12 @@ void board_manager(void const *arg) {
 		}
 		
 		else if(phase == Victory) {
-			osTimerStop(game_timer_id);
 			Display_Clear();
 			Display_ShowVictory();
 			while(phase == Victory) osThreadYield();
 		}
 		
 		else if(phase == GameOverExploded) {
-			osTimerStop(game_timer_id);
 			Display_Clear();
 			Display_ShowGameOver(1);
 			while(phase == GameOverExploded) osThreadYield();
