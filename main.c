@@ -92,41 +92,30 @@ void game_logic_manager(void const *arg) {
 	phase = Menu; // game starts in main menu
 	
 	while(1) {
-		printf("\n");
-		enum actionMessage message = None; 
-		
-		osEvent evt = osMailGet(q1_id, osWaitForever);
-		
-		if(evt.status == osEventMail) {
-			message = *((enum actionMessage *)(evt.value.p));
-			osMailFree(q1_id, evt.value.p);	
-		}		
+		if(phase == Game) {
+			enum actionMessage message = None; 
+			
+			osEvent evt = osMailGet(q1_id, osWaitForever);
+			
+			if(evt.status == osEventMail) {
+				message = *((enum actionMessage *)(evt.value.p));
+				osMailFree(q1_id, evt.value.p);	
+			}		
+			
+			if (message == MoveUp) {
 
-		osThreadYield(); 
+			
+
+			osThreadYield(); 
+
+		} 
 	}	
 }
-
-/*
-	NOTES: 
-		1. Clear the queue between game states? 
-		2. How fast should we be running peripherals to avoid "duplicate" actions? 	
-	STRUCTURE: 
-		1. Extract peripheral message from queue
-		2. Check game state 
-		3. Read peripheral message
-		4. Perform action
-		5. Update map structure
-	
-	PERIPHERAL PRECEDENCE 
-		INT0 > MOVE > BUTTON PUSH > POT
-		Need to discuss if we're going to allow "compound actions" or w.e. 
-*/
 
 osThreadDef(game_logic_manager, osPriorityNormal, 1, 0);
 
 void display_manager(void const *arg) {
 	while(1) {
-		printf("%u \n", time_remaining);
 		if(phase == Menu) {
 			// display menu graphics
 			while(phase == Menu) {
